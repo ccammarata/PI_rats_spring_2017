@@ -2,7 +2,7 @@
 ratList <- 101:112
 
 #make a data frame for the AB acquisition days
-sessList <- 40:44 #list session nubmers here
+sessList <-list(45,47,48)#list session nubmers here
 x <- length(sessList)
 y <- length(ratList)
 rowsNeeded <- (x*y)
