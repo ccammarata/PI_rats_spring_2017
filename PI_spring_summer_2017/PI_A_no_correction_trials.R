@@ -1,14 +1,14 @@
+#set the working directory
+setwd("./data")
 
 #list rat number here
 ratList <- list(101,102,103,104,105,106,107,108,109,110,112)
 
 #make a data frame for the AB acquisition days
-sessList <- list(117,118)#list session nubmers here
+sessList <- list(124:129)#list session nubmers here
 x <- length(sessList)
 y <- length(ratList)
 rowsNeeded <- (x*y)
-
-
 
 ABsummary <- matrix(data = NA, nrow = rowsNeeded, ncol=3)
 colnames(ABsummary)<- c('ratID', 'session', 'accuracy')
