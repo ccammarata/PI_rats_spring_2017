@@ -2,10 +2,10 @@
 setwd("./data")
 
 #list rat number here
-ratList <- list(101,102,103,104,105,106,107,108,109,110,112)
+ratList <- 101:112
 
 #make a data frame for the AB acquisition days
-sessList <- list(124:129)#list session nubmers here
+sessList <- 130:132#list session nubmers here
 x <- length(sessList)
 y <- length(ratList)
 rowsNeeded <- (x*y)
