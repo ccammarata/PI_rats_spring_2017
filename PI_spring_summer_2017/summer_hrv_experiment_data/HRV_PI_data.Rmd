@@ -1,3 +1,12 @@
+---
+title: "HRV_PI"
+author: "Celine"
+date: "August 4, 2017"
+output: word_document
+---
+
+```{r setup, echo=FALSE}
+
 options(contrasts=c("contr.sum", "contr.poly"))
 library(foreign)
 library(psych)
@@ -79,8 +88,7 @@ for (sessNum in sessList){
 
 #prepare wide and long form data frames for full task
 FULLfinalSummaryW <- data.frame(FULLsummary)
-#FULLfinalSummaryW$PI_effect <- FULLfinalSummaryW$DE_acc - FULLfinalSummaryW$AC_acc
-z = rowsNeeded*3
+z = rowsNeeded*3 
 FULLfinalSummaryL <- reshape(FULLfinalSummaryW, varying = c('AB_acc', 'AC_acc', 'DE_acc'), v.names="accuracy",
                          timevar='trialType',times=c('AB', 'CA', 'DE'), new.row.names=1:z, direction = 'long')
 FULLfinalSummaryL$ratID <-as.factor(FULLfinalSummaryL$ratID)
@@ -88,7 +96,7 @@ FULLfinalSummaryL$session <-as.factor(FULLfinalSummaryL$session)
 FULLfinalSummaryL$trialType <- as.factor(FULLfinalSummaryL$trialType)
 FULLfinalSummaryW$ratID <-as.factor(FULLfinalSummaryW$ratID)
 FULLfinalSummaryW$session <-as.factor(FULLfinalSummaryW$session)
-
+FULLfinalSummaryW$PI_effect <- FULLfinalSummaryW$DE_acc - FULLfinalSummaryW$AC_acc
 
 #making summary table for full task
 FULLsummaryTable <- aggregate(accuracy~trialType, data=FULLfinalSummaryL, FUN=(mean))
@@ -129,10 +137,15 @@ p1+geom_boxplot(aes(fill=trialType)) +
 qqnorm(FULLfinalSummaryL$accuracy)
 qqline(FULLfinalSummaryL$accuracy) #to check for normality of residuals
 aov1 <- ezANOVA(data=FULLfinalSummaryL, dv=accuracy, wid = ratID,within=c(trialType,session),detailed=TRUE,return_aov = TRUE)
-aov1$`Mauchly's Test for Sphericity` #to quckly check sphericity, which is fine in this case
-#I used ezANOVA to get the sphericity test but I can't figure out how to do post hoc analyses with that output
+```
+
+ANOVA for trial type by session
+```{r setup, echo=FALSE}
 aov2 <- aov_ez("ratID","accuracy",data=FULLfinalSummaryL,within = c("trialType","session"))
 summary(aov2)
+```
+Pairwise comparison with Holm correction
+```{r setup, echo=FALSE}
 lsmeans(aov2, "trialType", contr = "pairwise", adjust = "holm")
 
 
@@ -142,7 +155,7 @@ ggplot(FULLsummaryTable, aes(x=trialType, y=accuracy, fill=trialType)) +
   coord_cartesian(ylim=c(0,1))+
   geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width=.2,
                 position=position_dodge(.9)) +
-  scale_fill_manual(values=wes_palette("FantasticFox"))+
+  scale_fill_manual(values=wes_palette("Royal1"))+
   ggtitle("Accuracy by trial trype, averaged across days")+
   guides(fill=guide_legend(title="trial type")) +
   labs(x="Trial Type",y="Accuracy")
@@ -172,77 +185,5 @@ ggplot(FULLsummaryTable, aes(x=session,y=accuracy,colour = trialType))+
   
 plot(PI_effect~session,data=FULLfinalSummaryW, main=('PI effect (DE - CA) by session'),ylab = ('PI Effect'))
 
-AB_wide <- dcast(ABsummary, ratID~session, value.var = "accuracy")
-AB_wide$last_two_days <- (AB_wide$`138`+ AB_wide$`139`)/2
-keepRats <- subset(AB_wide, last_two_days >=.70)
-keepRats <- array(keepRats$ratID)
 
-data2 <- subset(FULLfinalSummaryW, ratID %in% keepRats)
-data3 <- subset(FULLfinalSummaryL, ratID %in% keepRats)
-
-data3Table <- aggregate(accuracy~trialType+session, data=data3, FUN=(mean))
-tempTable <- aggregate(accuracy~trialType+session, data=data3, FUN=(sd))
-data3Table<- as.data.frame(data3Table)
-data3Table$sd <- tempTable$accuracy
-tempTable$accuracy <- tempTable$accuracy/sqrt(y)
-data3Table$se <- tempTable$accuracy
-data3Table$accuracy <- data3Table$accuracy
-
-ggplot(data3Table, aes(x=session,y=accuracy,colour = trialType))+
-  geom_line(aes(group=trialType))+
-  geom_point()+geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se),width=.1,position=position_dodge(.05))+
-  coord_cartesian(ylim=c(.4,1))+
-  guides(colour=guide_legend(title="trial type"))+
-  scale_color_manual(values=wes_palette("FantasticFox"))+
-  ggtitle("High performers' Accuracy by Trial Type and Session, Full Task Days")
-
-# PI_effect_only <- subset(FULLfinalSummaryL, trialType=="PI")
-# aov3 <- aov_ez("ratID","accuracy", data=PI_effect_only,within=c("session"))
-# summary(aov3)
-# lsmeans(aov3, "session", contr = "pairwise", adjust = "holm")
-
-#simple main effects for trial type within each full task session
-sess140 <- subset(FULLfinalSummaryL, session == "140")
-sess141 <- subset(FULLfinalSummaryL, session == "141")
-sess142 <- subset(FULLfinalSummaryL, session == "142")
-sess143 <- subset(FULLfinalSummaryL, session == "143")
-sess144 <- subset(FULLfinalSummaryL, session == "144")
-
-aov4 <- aov_ez("ratID","accuracy",data=sess140,within=c("trialType"))
-aov5 <- aov_ez("ratID","accuracy",data=sess141,within=c("trialType"))
-aov6 <- aov_ez("ratID","accuracy",data=sess142,within=c("trialType"))
-aov7 <- aov_ez("ratID","accuracy",data=sess143,within=c("trialType"))
-aov8 <- aov_ez("ratID","accuracy",data=sess144,within=c("trialType"))
-
-lsmeans(aov4, "trialType", contr = "pairwise", adjust = "holm")
-lsmeans(aov5, "trialType", contr = "pairwise", adjust = "holm")
-lsmeans(aov6, "trialType", contr = "pairwise", adjust = "holm")
-lsmeans(aov7, "trialType", contr = "pairwise", adjust = "holm")
-lsmeans(aov8, "trialType", contr = "pairwise", adjust = "holm")
-
-slopeComparison <- matrix(data=NA,nrow=length(keepRats),ncol = 4)
-colnames(slopeComparison)<-c("ratID","DE_slope","AC_slope","slope_diff")
-sessions <- array(140:142)
-i=1
-for(rat in keepRats){
-subset1 <- subset(FULLfinalSummaryW, session %in% sessions)
-subset2 <- subset(subset1, ratID == rat)
-subset2$session <- as.character(subset2$session)
-subset2$session <- as.numeric(subset2$session)
-lmAC <- lm(subset2$AC_acc~subset2$session)
-slopeAC<-lmAC$coefficients[[2]]
-lmDE<- lm(subset2$DE_acc~subset2$session)
-slopeDE<-lmDE$coefficients[[2]]
-slopeDiff <- slopeDE-slopeAC
-slopeComparison[i,]<-c(rat,slopeDE,slopeAC,slopeDiff)
-#plot(subset2$session,subset2$DE_acc, col="red", type="l")
-#plot(subset2$session,subset2$AC_acc,col="blue", type="l")
-i=i+1
-}
-slopeComparison<-as.data.frame(slopeComparison)
-describe(slopeComparison)
-
-hist(slopeComparison$DE_slope)
-hist(slopeComparison$AC_slope)
-hist(slopeComparison$slope_diff)
-t.test(slopeComparison$DE_slope,slopeComparison$AC_slope, paired = TRUE)
+```
