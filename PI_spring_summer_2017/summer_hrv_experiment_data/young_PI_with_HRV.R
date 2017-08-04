@@ -7,7 +7,7 @@ library(car)
 library(ez)
 library(Rmisc)
 library(gmodels)
-library(wesanderson)
+library(package)
 library(afex)
 
 # for AB acquisition
@@ -24,7 +24,7 @@ colnames(ABsummary)<- c('ratID', 'session', 'accuracy')
 i = 1
 for (sessNum in sessList){
   for (rat in ratList) {
-    filename <- paste("U3_",rat,"_",sessNum,".csv", sep="")
+filename <- paste("U3_",rat,"_",sessNum,".csv", sep="")
     print(filename)
     currentData <- read.csv(filename, header=TRUE, sep="\t")
     currentData$resp2 <- ifelse(currentData$Response == "correct", 1,0)
