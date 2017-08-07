@@ -1,0 +1,157 @@
+---
+title: "PI and HRV"
+author: "Celine"
+date: "August 7, 2017"
+output: word_document
+---
+## PI behavioral results
+
+
+```{r, echo=FALSE}
+options(contrasts=c("contr.sum", "contr.poly"))
+library(foreign)
+library(psych)
+library(reshape2)
+library(ggplot2)
+library(car)
+library(ez)
+library(Rmisc)
+library(gmodels)
+library(package)
+library(afex)
+library(pander)
+
+# for AB acquisition
+sessList <- list(136,137,138,139)#list session nubmers here
+ratList <- list(101,102,103,104,105,106,107,108,109,110,112)#list rat number here
+x <- length(sessList)
+y <- length(ratList)
+rowsNeeded <- (x*y)
+
+ABsummary <- matrix(data = NA, nrow = rowsNeeded, ncol=3)
+colnames(ABsummary)<- c('ratID', 'session', 'accuracy')
+i = 1
+for (sessNum in sessList){
+  for (rat in ratList) {
+filename <- paste("U3_",rat,"_",sessNum,".csv", sep="")
+    print(filename)
+    currentData <- read.csv(filename, header=TRUE, sep="\t")
+    currentData$resp2 <- ifelse(currentData$Response == "correct", 1,0)
+    currentAB <- subset(currentData, trialType == "AB")
+    ABacc <- mean(currentAB$resp2)
+    ABsummary[i,0:3] <- c(rat, sessNum, ABacc)
+    i=i+1
+    
+  }
+}
+ABsummary <- data.frame(ABsummary)
+ABsummary$ratID <- as.factor(ABsummary$ratID)
+ABsummary$session <- as.factor(ABsummary$session)
+ABsummaryTable <- aggregate(accuracy~session, data=ABsummary, FUN=(mean))
+tempTable <- aggregate(accuracy~session, data=ABsummary, FUN=(sd))
+ABsummaryTable<- as.data.frame(ABsummaryTable)
+ABsummaryTable$sd <- tempTable$accuracy*100
+tempTable$accuracy <- tempTable$accuracy/sqrt(y)
+ABsummaryTable$se <- tempTable$accuracy*100
+ABsummaryTable$accuracy <- ABsummaryTable$accuracy * 100
+
+#for full task
+sessList <- list(140,141,142,143,144)#list session nubmers here
+ratList <- list(101,102,103,104,105,106,107,108,109,110,112)#list rat number here
+x <- length(sessList)
+y <- length(ratList)
+rowsNeeded <- (x*y)
+FULLsummary <- matrix(data = NA, nrow = rowsNeeded, ncol=5)
+colnames(FULLsummary)<- c('ratID', 'session', 'AB_acc', 'AC_acc', 'DE_acc')
+
+i = 1
+for (sessNum in sessList){
+  for (rat in ratList) {
+    filename <- paste("U3_",rat,"_",sessNum,".csv", sep="")
+    print(filename)
+    currentData <- read.csv(filename, header=TRUE, sep="\t")
+    currentData$resp2 <- ifelse(currentData$Response == "correct", 1,0)
+    currentAB <- subset(currentData, trialType == "AB")
+    ABacc <- mean(currentAB$resp2)
+    currentDE <- subset(currentData, trialType == "DE")
+    DEacc <- mean(currentDE$resp2)
+    currentAC <- subset(currentData, trialType == "CA")
+    ACacc <- mean(currentAC$resp2)
+    FULLsummary[i,0:5] <- c(rat, sessNum, ABacc, ACacc, DEacc)
+    i=i+1
+    
+  }
+}
+#prepare wide and long form data frames for full task
+FULLfinalSummaryW <- data.frame(FULLsummary)
+#FULLfinalSummaryW$PI_effect <- FULLfinalSummaryW$DE_acc - FULLfinalSummaryW$AC_acc
+z = rowsNeeded*3
+FULLfinalSummaryL <- reshape(FULLfinalSummaryW, varying = c('AB_acc', 'AC_acc', 'DE_acc'), v.names="accuracy",
+                         timevar='trialType',times=c('AB', 'CA', 'DE'), new.row.names=1:z, direction = 'long')
+FULLfinalSummaryL$ratID <-as.factor(FULLfinalSummaryL$ratID)
+FULLfinalSummaryL$session <-as.factor(FULLfinalSummaryL$session)
+FULLfinalSummaryL$trialType <- as.factor(FULLfinalSummaryL$trialType)
+FULLfinalSummaryW$ratID <-as.factor(FULLfinalSummaryW$ratID)
+FULLfinalSummaryW$session <-as.factor(FULLfinalSummaryW$session)
+
+#making summary table for full task
+FULLsummaryTable <- aggregate(accuracy~trialType, data=FULLfinalSummaryL, FUN=(mean))
+tempTable <- aggregate(accuracy~trialType, data=FULLfinalSummaryL, FUN=(sd))
+FULLsummaryTable<- as.data.frame(FULLsummaryTable)
+FULLsummaryTable$sd <- tempTable$accuracy
+tempTable$accuracy <- tempTable$accuracy/sqrt(y)
+FULLsummaryTable$se <- tempTable$accuracy
+FULLsummaryTable$accuracy <- FULLsummaryTable$accuracy
+
+```
+
+``` {r, echo=F}
+
+```
+
+HRV results
+### Descriptives
+
+```{r, echo=FALSE}
+hrv_data <- read.csv("HRV_PI.csv")
+
+hr_by_rat <- dcast(hrv_data, rat~session,value.var="avg_HR")
+hr_by_rat <- data.frame(hr_by_rat)
+colnames(hr_by_rat)<- c("ratID","day_1","day_2")
+
+
+rmssd_by_rat <- dcast(hrv_data, rat~session,value.var="rmssd")
+rmssd_by_rat <- data.frame(rmssd_by_rat)
+colnames(rmssd_by_rat)<-c("ratID","day_1","day_2")
+```
+Descriptive statistics for heart rate on each day
+```{r, echo=FALSE}
+pander(describe(hr_by_rat))
+```
+Descriptive statistics for heart rate on each day
+```` {r, echo=FALSE}
+pander(describe(rmssd_by_rat))
+```
+###Comparing day 1 and day 2 - RMSSD
+
+Regression results for relationship between RMSSD on day 1 and RMSSD on day 2 for each rat
+```{r, echo=FALSE}
+lm1 <- lm(day_1~day_2,data=rmssd_by_rat)
+```
+R squared: 
+```{r,echo=FALSE}
+summary(lm1)$r.squared
+plot(day_1~day_2,data=rmssd_by_rat, main="RMSSD for each rat, day 1 vs. day 2", xlab="RMSSD day 2",ylab="RMSSD day 1")
+abline(lm(day_1~day_2,data=rmssd_by_rat))
+```
+
+Regression results for relationship between heart rate on day 1 and heart rate on day 2 for each rat
+```{r, echo=FALSE}
+lm2 <- lm(day_1~day_2,data=hr_by_rat)
+```
+R squared:
+```{r, echo=FALSE}
+summary(lm2)$r.squared
+plot(day_1~day_2,data=hr_by_rat, main="heart rate for each rat, day 1 vs. day 2", xlab="HR day 2",ylab="HR day 1")
+abline(lm(day_1~day_2,data=hr_by_rat))
+```

@@ -9,7 +9,7 @@ library(Rmisc)
 library(gmodels)
 library(package)
 library(afex)
-
+library(wesanderson)
 # for AB acquisition
 sessList <- list(136,137,138,139)#list session nubmers here
 ratList <- list(101,102,103,104,105,106,107,108,109,110,112)#list rat number here
@@ -111,7 +111,6 @@ mean(ABsummary$accuracy)
 
 #part 2 - full task
 describe(FULLfinalSummaryW)
-describe(FULLfinalSummaryL)
 hist(FULLfinalSummaryL$accuracy, main = ('Distribution of Overall Accuracy, Full Task Days'),xlab=('Overall Accuracy'))
 #accuracy for the full task is normally distributed 
 plot(accuracy~session, data=FULLfinalSummaryL,main=('Overall accuracy by session, full task days'))
@@ -121,20 +120,8 @@ p1+geom_boxplot(aes(fill=trialType)) +
   coord_cartesian(ylim=c(0,1))+
   ggtitle("Accuracy by Trial type, averages across full task days") +
   labs(x="Trial Type",y="Accuracy")+
-  scale_fill_manual(values=wes_palette("Cavalcanti"))+
+  scale_fill_manual(values=wes_palette("FantasticFox"))+
   guides(fill=guide_legend(title="trial type"))
-
-
-#inferential tests of full task
-qqnorm(FULLfinalSummaryL$accuracy)
-qqline(FULLfinalSummaryL$accuracy) #to check for normality of residuals
-aov1 <- ezANOVA(data=FULLfinalSummaryL, dv=accuracy, wid = ratID,within=c(trialType,session),detailed=TRUE,return_aov = TRUE)
-aov1$`Mauchly's Test for Sphericity` #to quckly check sphericity, which is fine in this case
-#I used ezANOVA to get the sphericity test but I can't figure out how to do post hoc analyses with that output
-aov2 <- aov_ez("ratID","accuracy",data=FULLfinalSummaryL,within = c("trialType","session"))
-summary(aov2)
-lsmeans(aov2, "trialType", contr = "pairwise", adjust = "holm")
-
 
 ggplot(FULLsummaryTable, aes(x=trialType, y=accuracy, fill=trialType)) + 
   geom_bar(stat="identity", color="black", 
@@ -169,8 +156,19 @@ ggplot(FULLsummaryTable, aes(x=session,y=accuracy,colour = trialType))+
   guides(colour=guide_legend(title="trial type"))+
   scale_color_manual(values=wes_palette("FantasticFox"))+
   ggtitle('Accuracy by Trial Type and Session, Full Task Days')
-  
+
 plot(PI_effect~session,data=FULLfinalSummaryW, main=('PI effect (DE - CA) by session'),ylab = ('PI Effect'))
+
+
+#inferential tests of full task
+qqnorm(FULLfinalSummaryL$accuracy)
+qqline(FULLfinalSummaryL$accuracy) #to check for normality of residuals
+aov1 <- ezANOVA(data=FULLfinalSummaryL, dv=accuracy, wid = ratID,within=c(trialType,session),detailed=TRUE,return_aov = TRUE)
+aov1$`Mauchly's Test for Sphericity` #to quckly check sphericity, which is fine in this case
+#I used ezANOVA to get the sphericity test but I can't figure out how to do post hoc analyses with that output
+aov2 <- aov_ez("ratID","accuracy",data=FULLfinalSummaryL,within = c("trialType","session"))
+summary(aov2)
+lsmeans(aov2, "trialType", contr = "pairwise", adjust = "holm")
 
 AB_wide <- dcast(ABsummary, ratID~session, value.var = "accuracy")
 AB_wide$last_two_days <- (AB_wide$`138`+ AB_wide$`139`)/2
