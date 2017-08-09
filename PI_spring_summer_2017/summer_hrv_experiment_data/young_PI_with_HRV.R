@@ -102,15 +102,14 @@ FULLsummaryTable$accuracy <- FULLsummaryTable$accuracy
 
 #part 1 - AB acquisition
 #check distribution
-describe(ABsummary)
+pander(describe(ABsummary))
 hist(ABsummary$accuracy,main = ('Distribution of Accuracy during AB acquisiton, all sessions'),xlab = ('AB accuracy'))
 #distribution is actually a bit strange, though all above chance - also pretty small number of rats
 plot(accuracy~session, data=ABsummary, main=('AB accuracy by session, AB acquisition'))
-mean(ABsummary$accuracy)
 # no interesting results, though by the end of the first session the group average was almost 80% accuracy
 
 #part 2 - full task
-describe(FULLfinalSummaryW)
+pander(describe(FULLfinalSummaryW))
 hist(FULLfinalSummaryL$accuracy, main = ('Distribution of Overall Accuracy, Full Task Days'),xlab=('Overall Accuracy'))
 #accuracy for the full task is normally distributed 
 plot(accuracy~session, data=FULLfinalSummaryL,main=('Overall accuracy by session, full task days'))
